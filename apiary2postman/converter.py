@@ -9,7 +9,7 @@ def _buildCollectionResponse(apiary, single_collection):
 	# Create the collection
 	collections = parseResourceGroups(
 		apiary,
-		environment['values'], 
+		environment['values'],
 		True,
 		single_collection)
 
@@ -46,8 +46,8 @@ def _buildFullResponse(apiary, single_collection):
 
 	# Create the collection
 	result['collections'] = parseResourceGroups(
-		apiary, 
-		result['environments'][0]['values'], 
+		apiary,
+		result['environments'][0]['values'],
 		False,
 		single_collection)
 
@@ -73,7 +73,7 @@ def _createFolder(name, description, collection):
 	folder['description'] = description
 	folder['order'] = []
 	folder['collection_id'] = collection['id']
-	folder['collection_name'] = collection['name']	
+	folder['collection_name'] = collection['name']
 	return folder
 
 def write(json_data, out=stdout, only_collection=False, pretty=False, single_collection=False):
@@ -99,7 +99,7 @@ def createEnvironment(json_obj):
 	environment['syncedFilename'] = ''
 	environment['values'] = []
 
-	
+
 	for metadata in json_obj['metadata']:
 		if metadata['name'] == "FORMAT":
 			continue
@@ -116,7 +116,7 @@ def createEnvironment(json_obj):
 def parseResourceGroups(apiary, environment_vals, only_collection, single_collection):
 	out = []
 
-	if single_collection:		
+	if single_collection:
 		# Create THE collection
 		collection = _createCollection(apiary['name'], apiary['description'])
 		# Add collection to output
@@ -134,13 +134,14 @@ def parseResourceGroups(apiary, environment_vals, only_collection, single_collec
 			# Add folder json to collection
 			collection['folders'].append( folder )
 
-		for resource in resourceGroup['resources']:	
+		for resource in resourceGroup['resources']:
+
 			if single_collection is False:
 				# Create folder per resource
-				folder = _createFolder(resource['name'], resource['description'], collection)	
+				folder = _createFolder(resource['name'], resource['description'], collection)
 				# Add folder json to collection
 				collection['folders'].append( folder )
-		
+
 			sub_url = resource['uriTemplate']
 			for action in resource['actions']:
 				request = dict()
@@ -155,16 +156,22 @@ def parseResourceGroups(apiary, environment_vals, only_collection, single_collec
 				request['descriptionFormat'] = 'html'
 				request['method'] = action['method']
 
-				request['url'] = "{{HOST}}"+sub_url
+
+				uriTemplate = action['attributes']['uriTemplate']
+				if uriTemplate:
+					url = uriTemplate
+				else:
+					url = sub_url
+				request['url'] = "{{HOST}}"+url
 				if only_collection:
 					for value in environment_vals:
 						if value['name'] == 'HOST':
-							request['url'] = value['value'] + sub_url
+							request['url'] = value['value'] + url
 
 				request['dataMode'] = 'params'
 				request['data'] = []
 
-				# Unsupported data				
+				# Unsupported data
 				request['pathVariables'] = dict()
 				request['tests'] = ''
 				request['time'] = int(time())
@@ -201,5 +208,5 @@ def parseResourceGroups(apiary, environment_vals, only_collection, single_collec
 				folder['order'].append( request['id'] )
 				# Add request json to the collection
 				collection['requests'].append(request)
-		
+
 	return out
